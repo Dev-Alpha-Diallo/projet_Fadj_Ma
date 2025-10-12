@@ -13,15 +13,28 @@ return new class extends Migration
     {
         Schema::create('medicaments', function (Blueprint $table) {
             $table->id();
+            $table->string('id_medicament')->unique(); // identifiant généré (ex: D06IDxxxxx)
             $table->string('nom');
-            $table->foreignId('groupe_medicament_id')->constrained('groupe_medicaments')->onDelete('cascade');
-            $table->integer('stock_quantite');
-            $table->decimal('prix', 8, 2);
-            $table->string('composition');
-            $table->string('fabriquant');
-            $table->string('type_consommation');
-            $table->date('date_expiration');
+
+            // Groupe relié à table "groupe_medicaments" (optionnel)
+            $table->foreignId('groupe_medicament_id')
+                ->nullable()
+                ->constrained('groupe_medicaments')
+                ->onDelete('set null');
+
+            // Champs principaux
+            $table->string('groupe')->default('Non classé');
+            $table->integer('stock_quantite')->default(0);
+            $table->decimal('prix', 12, 2)->nullable();
+            $table->string('dosage')->nullable(); // champ pour "500 mg", "1g/100mL", etc.
+            $table->string('fabriquant')->nullable();
+            $table->string('type_consommation')->nullable(); // ex: voie orale, injectable
+            $table->date('date_expiration')->nullable();
             $table->text('description')->nullable();
+
+            // Image (stockée dans storage/app/public/medicaments)
+            $table->string('image')->nullable();
+
             $table->timestamps();
         });
     }

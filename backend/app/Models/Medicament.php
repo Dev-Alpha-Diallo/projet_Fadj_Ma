@@ -13,9 +13,10 @@ class Medicament extends Model
         'nom',
         'id_medicament',
         'groupe_medicament_id',
+        'groupe',
         'stock_quantite',
         'prix',
-        'composition',
+        'dosage',
         'fabriquant',
         'type_consommation',
         'date_expiration',
@@ -25,12 +26,12 @@ class Medicament extends Model
 
     protected $casts = [
         'date_expiration' => 'date',
-        'stock_quantite' => 'integer',
+        'stock_quantite'  => 'integer',
+        'prix'            => 'decimal:2',
     ];
 
-public function groupe()
-{
-    return $this->belongsTo(GroupeMedicament::class, 'groupe_medicament_id');
-}
-
+    public function groupe()
+    {
+        return $this->belongsTo(GroupeMedicament::class, 'groupe_medicament_id');
+    }
 }

@@ -14,19 +14,13 @@ const Medicaments = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Formulaire pour nouveau médicament
+  // ✅ Formulaire: nom, description, dosage, prix (+ image optionnelle)
   const [newMedicament, setNewMedicament] = useState({
     nom: '',
-    groupe: '',
-    stock_quantite: '',
-    prix: '',
-    composition: '',
-    fabriquant: '',
-    type_consommation: '',
-    date_expiration: '',
     description: '',
+    dosage: '',
+    prix: '',
     image: null,
-    prix: '',  // Ajout du prix
   });
 
   useEffect(() => {
@@ -59,33 +53,37 @@ const Medicaments = () => {
     e.preventDefault();
 
     const formData = new FormData();
-    Object.keys(newMedicament).forEach(key => {
-      if (newMedicament[key]) {
-        formData.append(key, newMedicament[key]);
-      }
-    });
+    formData.append('nom', newMedicament.nom);
+
+    if (newMedicament.description) formData.append('description', newMedicament.description);
+    if (newMedicament.dosage) formData.append('dosage', newMedicament.dosage);
+    if (newMedicament.prix !== '') formData.append('prix', String(newMedicament.prix));
+    if (newMedicament.image) formData.append('image', newMedicament.image);
 
     try {
-      await medicamentService.create(formData);
+      const response = await medicamentService.create(formData);
+      console.log('Médicament créé:', response.data);
+
       setShowAddModal(false);
       fetchMedicaments();
-      // Réinitialiser le formulaire
       setNewMedicament({
         nom: '',
-        groupe: '',
-        stock_quantite: '',
-        prix: '',
-        composition: '',
-        fabriquant: '',
-        type_consommation: '',
-        date_expiration: '',
         description: '',
+        dosage: '',
+        prix: '',
         image: null,
-        prix: '',  // Réinitialiser le prix
       });
+      alert('Médicament ajouté avec succès !');
     } catch (error) {
-      console.error('Erreur lors de l\'ajout du médicament:', error);
-      alert('Erreur lors de l\'ajout du médicament');
+      console.error('Erreur complète:', error);
+      console.error('Réponse du serveur:', error.response?.data);
+      let errorMessage = "Erreur lors de l'ajout du médicament";
+      if (error.response?.data?.errors) {
+        errorMessage = Object.values(error.response.data.errors).flat().join('\n');
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      alert(errorMessage);
     }
   };
 
@@ -101,7 +99,6 @@ const Medicaments = () => {
         {/* Barre de recherche et actions */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex flex-col sm:flex-row gap-4 items-center">
-            {/* Recherche */}
             <div className="flex-1 relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
@@ -113,15 +110,11 @@ const Medicaments = () => {
               />
             </div>
 
-            {/* Filtre par groupe */}
             <div className="relative w-full sm:w-auto">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <select
                 value={selectedGroupe}
-                onChange={(e) => {
-                  setSelectedGroupe(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => { setSelectedGroupe(e.target.value); setCurrentPage(1); }}
                 className="pl-10 pr-8 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7DD3FC] appearance-none w-full sm:w-auto"
               >
                 <option value="">Sélectionnez un groupe</option>
@@ -132,7 +125,6 @@ const Medicaments = () => {
               </select>
             </div>
 
-            {/* Bouton Nouveau médicament */}
             <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-2 bg-white border border-gray-300 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors w-full sm:w-auto"
@@ -143,7 +135,7 @@ const Medicaments = () => {
           </div>
         </div>
 
-        {/* Table des médicaments */}
+        {/* Table (inchangée) */}
         <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -157,17 +149,9 @@ const Medicaments = () => {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
-                    Chargement...
-                  </td>
-                </tr>
+                <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-500">Chargement...</td></tr>
               ) : medicaments.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
-                    Aucun médicament trouvé
-                  </td>
-                </tr>
+                <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-500">Aucun médicament trouvé</td></tr>
               ) : (
                 medicaments.map((medicament) => (
                   <tr key={medicament.id} className="hover:bg-gray-50 transition-colors">
@@ -176,10 +160,7 @@ const Medicaments = () => {
                     <td className="px-6 py-4 text-sm text-gray-600">{medicament.groupe}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{medicament.stock_quantite}</td>
                     <td className="px-6 py-4 text-sm">
-                      <button
-                        onClick={() => navigate(`/medicaments/${medicament.id}`)}
-                        className="text-blue-600 hover:underline"
-                      >
+                      <button onClick={() => navigate(`/medicaments/${medicament.id}`)} className="text-blue-600 hover:underline">
                         Voir tous les détails »
                       </button>
                     </td>
@@ -190,26 +171,16 @@ const Medicaments = () => {
           </table>
 
           {/* Pagination */}
-          <div className="flex justify-between items-center px-6 py-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-t border-gray-200 gap-4">
             <p className="text-sm text-gray-600">
-              Affichage de {(currentPage - 1) * 10 + 1} à {Math.min(currentPage * 10, medicaments.length)} résultats sur {medicaments.length}
+              Affichage de {(currentPage - 1) * 10 + 1} à {Math.min(currentPage * 10, medicaments.length)} résultats
             </p>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
-              >
+              <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50">
                 <ChevronLeft size={20} />
               </button>
-              <span className="px-4 py-2 bg-gray-100 rounded">
-                Page {currentPage}
-              </span>
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
-              >
+              <span className="px-4 py-2 bg-gray-100 rounded">Page {currentPage}</span>
+              <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50">
                 <ChevronRight size={20} />
               </button>
             </div>
@@ -217,26 +188,21 @@ const Medicaments = () => {
         </div>
       </div>
 
-      {/* Modal Ajouter un médicament */}
+      {/* Modal Ajouter */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            {/* Header du modal */}
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-2xl font-bold text-gray-800">Nouveau médicament</h2>
             </div>
-            
+
             <form onSubmit={handleAddMedicament} className="p-6">
-              {/* Section Upload d'image */}
+              {/* Image (optionnelle) */}
               <div className="mb-8">
                 <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50">
                   <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mb-4">
                     {newMedicament.image ? (
-                      <img
-                        src={URL.createObjectURL(newMedicament.image)}
-                        alt="Preview"
-                        className="w-full h-full object-cover rounded-full"
-                      />
+                      <img src={URL.createObjectURL(newMedicament.image)} alt="Preview" className="w-full h-full object-cover rounded-full" />
                     ) : (
                       <Plus size={48} className="text-gray-400" />
                     )}
@@ -245,114 +211,116 @@ const Medicaments = () => {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setNewMedicament({...newMedicament, image: e.target.files[0]})}
+                    onChange={(e) => setNewMedicament({ ...newMedicament, image: e.target.files?.[0] || null })}
                     className="hidden"
                     id="image-upload"
                   />
-                  <label
-                    htmlFor="image-upload"
-                    className="cursor-pointer text-blue-600 hover:text-blue-800 text-sm"
-                  >
+                  <label htmlFor="image-upload" className="cursor-pointer text-blue-600 hover:text-blue-800 text-sm">
                     Cliquez pour sélectionner une image
                   </label>
                 </div>
               </div>
 
-              {/* Section Obligatoire */}
+              {/* Champs */}
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-gray-800 mb-1">Obligatoire</h3>
                 <p className="text-sm text-gray-500 mb-4">Donnez plus de détails possible</p>
 
-                <div className="grid grid-cols-2 gap-6">
-                  {/* Nom du médicament */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nom du médicament
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nom du médicament</label>
                     <input
                       type="text"
-                      placeholder="Nom du médicament"
+                      placeholder="Ex: Paracétamol"
                       value={newMedicament.nom}
-                      onChange={(e) => setNewMedicament({...newMedicament, nom: e.target.value})}
+                      onChange={(e) => setNewMedicament({ ...newMedicament, nom: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7DD3FC]"
                       required
                     />
                   </div>
 
-                  {/* Description */}
+                                    <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Groupe</label>
+                    <select
+                      value={newMedicament.groupe}
+                      onChange={(e) => setNewMedicament({ ...newMedicament, groupe: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7DD3FC]"
+                    >
+                      <option value="">Sélectionnez un groupe</option>
+                      <option value="Médecine générique">Médecine générique</option>
+                      <option value="Diabète">Diabète</option>
+                      <option value="Cardiologie">Cardiologie</option>
+                      <option value="Pédiatrie">Pédiatrie</option>
+                      {/* Ajoute ici d'autres options de groupes si nécessaire */}
+                    </select>
+                  </div>
+
+
+                                       
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Stock en quantité</label>
+                      <input
+                        type="number"
+                        placeholder="Ex: 100"
+                        value={newMedicament.stock_quantite}
+                        onChange={(e) => setNewMedicament({ ...newMedicament, stock_quantite: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7DD3FC]"
+                        min="0"
+                        step="1"
+                      />
+                    </div>
+
+                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                     <input
                       type="text"
-                      placeholder="Description"
                       value={newMedicament.description}
-                      onChange={(e) => setNewMedicament({...newMedicament, description: e.target.value})}
+                      onChange={(e) => setNewMedicament({ ...newMedicament, description: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7DD3FC]"
                     />
                   </div>
 
-                  {/* Dosage */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Dosage
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Dosage</label>
                     <input
                       type="text"
-                      placeholder="Dosage"
-                      value={newMedicament.composition}
-                      onChange={(e) => setNewMedicament({...newMedicament, composition: e.target.value})}
+                      placeholder="Ex: 500 mg"
+                      value={newMedicament.dosage}
+                      onChange={(e) => setNewMedicament({ ...newMedicament, dosage: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7DD3FC]"
                     />
                   </div>
 
-                  {/* Prix */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Prix
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Prix</label>
                     <input
                       type="number"
-                      placeholder="Prix"
-                      value={newMedicament.prix || ''}
-                      onChange={(e) => setNewMedicament({...newMedicament, prix: e.target.value})}
+                      placeholder="Ex: 1500"
+                      value={newMedicament.prix}
+                      onChange={(e) => setNewMedicament({ ...newMedicament, prix: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7DD3FC]"
                       min="0"
+                      step="0.01"
+                      inputMode="decimal"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Boutons */}
-              <div className="flex gap-4 mt-8">
+              <div className="flex flex-col sm:flex-row gap-4 mt-8">
                 <button
                   type="button"
                   onClick={() => {
                     setShowAddModal(false);
-                    setNewMedicament({
-                      nom: '',
-                      groupe: '',
-                      stock_quantite: '',
-                      prix: '',  
-                      composition: '',
-                      fabriquant: '',
-                      type_consommation: '',
-                      date_expiration: '',
-                      description: '',
-                      image: null,
-                      prix: '',  // Réinitialisation du prix
-                    });
+                    setNewMedicament({ nom: '', description: '', dosage: '', prix: '', image: null });
                   }}
                   className="flex-1 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                 >
                   Annuler
                 </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-3 bg-[#7DD3FC] text-white rounded-lg hover:bg-[#5BC0DE] transition-colors font-medium"
-                >
-                  Enregistrer
+                <button type="submit" className="flex-1 px-6 py-3 bg-[#7DD3FC] text-white rounded-lg hover:bg-[#5BC0DE] transition-colors font-medium">
+                  Enrégistrer
                 </button>
               </div>
             </form>

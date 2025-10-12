@@ -82,7 +82,7 @@ const Sidebar = ({ user }) => {
 
       {/* Footer */}
       <div className="p-4 text-xs text-gray-400 text-center">
-        Propulsé par Red Team © 2024 version 1.1.2
+        &copy; 2025 DevAlpha. Tous droits réservés.
       </div>
     </div>
   );
